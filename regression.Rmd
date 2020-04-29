@@ -1,0 +1,73 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+library(tidyverse)
+library(neuralnet)
+library(keras)
+```
+
+
+```{r}
+data<-read.csv("New SEER TNBC Dataset,January 27, 2020.csv")
+
+data1<-data  %>% 
+  mutate(survived =case_when(Vital_status_recode_study_cutoff_used=="Alive"~1,
+                             Vital_status_recode_study_cutoff_used=="Dead"~0)) %>% 
+  select(AgeAtDiagnosis,Tumor_Size,Survival_Months,survived,NPI_Score,Ethnicity_Race_Class,LympthNodesPositive,Marital_Status_Class) %>% 
+  drop_na()
+```
+
+
+
+
+```{r}
+reg<-reg<-lm(Survival_Months~.,data = data1)
+reg
+summary(reg)
+```
+
+
+```{r}
+reg<-reg<-lm(Survival_Months~Tumor_Size+NPI_Score+Marital_Status_Class,data = data1)
+reg
+summary(reg)
+```
+
+
+
+```{r}
+reg.reduced<-lm(Survival_Months ~ as.factor(Marital_Status_Class) ,data = data1  )
+reg.reduced
+summary(reg.reduced)
+```
+
+
+
+
+
+
+```{r}
+reg<-lm(Survival_Months~ as.factor(Ethnicity_Race_Class),data = data1)
+reg
+summary(reg)
+
+```
+
+
+```{r}
+par(mfrow=c(2,2))
+
+plot(reg.reduced)
+```
+
+
+
+```{r}
+reg<-lm(Survival_Months~ as.factor(Ethnicity_Race_Class),data = data1)
+reg
+summary(reg)
+```

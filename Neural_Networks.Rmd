@@ -1,0 +1,218 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(neuralnet)
+library(keras)
+```
+
+
+```{r}
+data<-read.csv("New SEER TNBC Dataset,January 27, 2020.csv")
+```
+
+
+```{r}
+data1<-data  %>% 
+  mutate(survived =case_when(Vital_status_recode_study_cutoff_used=="Alive"~1,
+                             Vital_status_recode_study_cutoff_used=="Dead"~0)) %>% 
+  select(AgeAtDiagnosis,CS_tumor_size2004,CS_extension2004,CS_lymph_nodes2004,Survival_Months,survived,) %>% 
+  drop_na()
+```
+
+
+
+
+
+
+```{r}
+## data normalization
+max_survial<-max(data1$Survival_Months)
+min_survial<-min(data1$Survival_Months)
+
+data1$AgeAtDiagnosis<-(data1$AgeAtDiagnosis-min(data1$AgeAtDiagnosis))/(max(data1$AgeAtDiagnosis)-min(data1$AgeAtDiagnosis))
+
+data1$CS_tumor_size2004<-(data1$CS_tumor_size2004-min(data1$CS_tumor_size2004))/(max(data1$CS_tumor_size2004)-min(data1$CS_tumor_size2004))
+
+data1$CS_extension2004<-(data1$CS_extension2004-min(data1$CS_extension2004))/(max(data1$CS_extension2004)-min(data1$CS_extension2004))
+
+data1$CS_lymph_nodes2004<-(data1$CS_lymph_nodes2004-min(data1$CS_lymph_nodes2004))/(max(data1$CS_lymph_nodes2004)-min(data1$CS_lymph_nodes2004))
+
+data1$Survival_Months<-(data1$Survival_Months-min(data1$Survival_Months))/(max(data1$Survival_Months)-min(data1$Survival_Months))
+
+
+data1
+
+```
+
+
+
+```{r}
+## data seperation
+create_train_test <- function(data, size = 0.85, train = TRUE) {
+    n_row = nrow(data)
+    total_row = size * n_row
+    train_sample <- 1: total_row
+    
+    if (train == TRUE) {
+        return (data[train_sample, ])
+    } else {
+        return (data[-train_sample, ])
+    }
+}
+
+trainning <- create_train_test(data1, 0.8, train = TRUE)
+testing <- create_train_test(data1, 0.8, train = FALSE)
+
+
+
+```
+
+
+```{r}
+n1<-neuralnet(Survival_Months~CS_lymph_nodes2004+CS_extension2004+CS_tumor_size2004+AgeAtDiagnosis,
+             data = trainning,
+             hidden = 1,
+             err.fct = "sse",
+             linear.output = FALSE)
+plot(n1)
+```
+
+```{r}
+n2<-neuralnet(Survival_Months~CS_lymph_nodes2004+CS_extension2004+CS_tumor_size2004+AgeAtDiagnosis,
+             data = trainning,
+             hidden = 2,
+             err.fct = "sse",
+             linear.output = FALSE)
+plot(n2)
+```
+
+```{r}
+n3<-neuralnet(Survival_Months~CS_lymph_nodes2004+CS_extension2004+CS_tumor_size2004+AgeAtDiagnosis,
+             data = trainning,
+             hidden = 3,
+             err.fct = "sse",
+             linear.output = FALSE)
+plot(n3)
+```
+
+```{r}
+n4<-neuralnet(Survival_Months~CS_lymph_nodes2004+CS_extension2004+CS_tumor_size2004+AgeAtDiagnosis,
+             data = trainning,
+             hidden = c(3,2),
+             err.fct = "sse",
+             linear.output = FALSE)
+plot(n4)
+```
+
+
+## prediction,confusion matrix and error
+```{r}
+output<-compute(n1,testing[,-5])
+p1<-output$net.result
+pred1<-p1*(max_survial-min_survial)+min_survial
+tab<-table(round(pred1,digits = 0),round(testing$Survival_Months*(max_survial-min_survial)+min_survial,digits = 0))
+
+1-sum(diag(tab))/sum(tab)
+```
+
+
+```{r}
+output<-compute(n2,testing[,-5])
+p1<-output$net.result
+pred1<-p1*(max_survial-min_survial)+min_survial
+tab<-table(round(pred1,digits = 0),round(testing$Survival_Months*(max_survial-min_survial)+min_survial,digits = 0))
+
+1-sum(diag(tab))/sum(tab)
+```
+
+```{r}
+output<-compute(n2,testing[,-1])
+p1<-output$net.result
+pred1<-p1*(max_survial-min_survial)+min_survial
+tab<-table(round(pred1,digits = 0),round(testing$Survival_Months*(max_survial-min_survial)+min_survial,digits = 0))
+
+1-sum(diag(tab))/sum(tab)
+```
+
+
+
+
+
+```{r}
+n1<-neuralnet(survived~CS_lymph_nodes2004+CS_extension2004+CS_tumor_size2004+AgeAtDiagnosis,
+             data = trainning,
+             hidden = 1,
+             err.fct = "sse",
+             linear.output = FALSE)
+plot(n1)
+```
+```{r}
+output<-compute(n1,testing[,-6])
+p1<-output$net.result
+pred<-ifelse(p1>0.5,1,0)
+tab<-table(pred,testing$survived)
+tab
+1-sum(diag(tab))/sum(tab)
+```
+
+```{r}
+n2<-neuralnet(survived~CS_lymph_nodes2004+CS_extension2004+CS_tumor_size2004+AgeAtDiagnosis,
+             data = trainning,
+             hidden = 2,
+             err.fct = "sse",
+             linear.output = FALSE)
+plot(n2)
+```
+
+```{r}
+output<-compute(n2,testing[,-6])
+p1<-output$net.result
+pred<-ifelse(p1>0.5,1,0)
+tab<-table(pred,testing$survived)
+tab
+1-sum(diag(tab))/sum(tab)
+```
+
+```{r}
+n3<-neuralnet(survived~CS_lymph_nodes2004+CS_extension2004+CS_tumor_size2004+AgeAtDiagnosis,
+             data = trainning,
+             hidden = 5,
+             err.fct = "sse",
+             linear.output = FALSE)
+plot(n3)
+```
+
+```{r}
+output<-compute(n3,testing[,-6])
+p1<-output$net.result
+pred<-ifelse(p1>0.5,1,0)
+tab<-table(pred,testing$survived)
+tab
+1-sum(diag(tab))/sum(tab)
+```
+
+```{r}
+n4<-neuralnet(survived~CS_lymph_nodes2004+CS_extension2004+CS_tumor_size2004+AgeAtDiagnosis,
+             data = trainning,
+             hidden = 6,
+             err.fct = "sse",
+             linear.output = FALSE)
+plot(n4)
+```
+
+```{r}
+output<-compute(n4,testing[,-6])
+p1<-output$net.result
+pred<-ifelse(p1>0.5,1,0)
+tab<-table(pred,testing$survived)
+tab
+1-sum(diag(tab))/sum(tab)
+```
+
+
+
+

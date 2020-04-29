@@ -1,0 +1,122 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(rpart)
+library(rpart.plot)
+```
+
+
+```{r}
+data<-read.csv("New SEER TNBC Dataset,January 27, 2020.csv")
+```
+
+```{r}
+data1<-data %>% 
+  mutate(survived =case_when(Vital_status_recode_study_cutoff_used=="Alive"~1,
+                             Vital_status_recode_study_cutoff_used=="Dead"~0)) %>% 
+  select(AgeAtDiagnosis,Tumor_Size,Survival_Months,survived,NPI_Score,Ethnicity_Race_Class,LympthNodesPositive,Marital_Status_Class,Age50)
+
+```
+
+
+```{r}
+create_train_test <- function(data, size = 0.85, train = TRUE) {
+    n_row = nrow(data)
+    total_row = size * n_row
+    train_sample <- 1: total_row
+    
+    if (train == TRUE) {
+        return (data[train_sample, ])
+    } else {
+        return (data[-train_sample, ])
+    }
+}
+
+data_train <- create_train_test(data1, 0.8, train = TRUE)
+data_test <- create_train_test(data1, 0.8, train = FALSE)
+
+
+```
+
+```{r}
+
+fit <- rpart(survived~AgeAtDiagnosis,
+             data = data1, method = 'class')
+rpart.plot(fit,extra = 106)
+```
+
+
+```{r}
+fit <- rpart(survived~NPI_Score+AgeAtDiagnosis,
+             data = data1, method = 'class')
+rpart.plot(fit,extra = 106)
+```
+
+
+
+```{r}
+
+
+fit <- rpart(survived~AgeAtDiagnosis+NPI_Score+Survival_Months,
+             data = data1, method = 'class')
+rpart.plot(fit,extra = 106)
+```
+
+
+
+```{r}
+
+fit <- rpart(survived~.,
+             data = data1, method = 'class')
+rpart.plot(fit,extra = 106)
+
+```
+
+
+```{r}
+data2<-read.csv("New SEER All Breast Cancer Patients, January 27, 2020.csv")
+```
+
+```{r}
+data3<-data2 %>% 
+  mutate(survived =case_when(Vital_status_recode_study_cutoff_used=="Alive"~1,
+                             Vital_status_recode_study_cutoff_used=="Dead"~0)) %>% 
+  select(AgeAtDiagnosis,Tumor_Size,Survival_Months,survived,NPI_Score,Ethnicity_Race_Class,LympthNodesPositive,Marital_Status_Class)
+```
+
+```{r}
+
+fit <- rpart(survived~AgeAtDiagnosis,
+             data = data1, method = 'class')
+rpart.plot(fit,extra = 106)
+```
+
+
+```{r}
+fit <- rpart(survived~AgeAtDiagnosis+NPI_Score,
+             data = data1, method = 'class')
+rpart.plot(fit,extra = 106)
+```
+
+
+
+```{r}
+
+
+fit <- rpart(survived~AgeAtDiagnosis+NPI_Score+Survival_Months,
+             data = data1, method = 'class')
+rpart.plot(fit,extra = 106)
+```
+
+
+
+```{r}
+
+fit <- rpart(survived~AgeAtDiagnosis+NPI_Score+Survival_Months+Tumor_Size,
+             data = data1, method = 'class')
+rpart.plot(fit,extra = 106)
+```
